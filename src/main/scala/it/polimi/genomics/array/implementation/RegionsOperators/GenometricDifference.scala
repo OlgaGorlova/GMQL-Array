@@ -34,11 +34,11 @@ object GenometricDifference {
     execute(ref, exp, BINNING_PARAMETER, exact, sc)
   }
 
-  def apply(left:RDD[GArray], right: RDD[GArray], BINNING_PARAMETER:Long, exact:Boolean, sc : SparkContext) : RDD[GArray] = {
+  def apply(left:RDD[GARRAY], right: RDD[GARRAY], BINNING_PARAMETER:Long, exact:Boolean, sc : SparkContext) : RDD[GARRAY] = {
 
     logger.info("----------------GenometricDifference executing...")
 
-    execute2(left,right,BINNING_PARAMETER,exact,sc)
+    execute(left,right,BINNING_PARAMETER,exact,sc)
   }
 
   def execute(ref:RDD[GARRAY], exp: RDD[GARRAY], BINNING_PARAMETER:Long, exact:Boolean, sc : SparkContext) : RDD[(GRegionKey, GAttributes)] = {

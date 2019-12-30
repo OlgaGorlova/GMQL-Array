@@ -31,10 +31,10 @@ object ExtendRD {
 
   }
 
-  def apply(inputDataset: RDD[GArray], aggregators: List[RegionsToMeta], sc: SparkContext): RDD[(Long, (String, String))] = {
+  def apply(inputDataset: RDD[GARRAY], aggregators: List[RegionsToMeta], sc: SparkContext): RDD[(Long, (String, String))] = {
     logger.info("----------------ExtendRD executing..")
 
-    execute2(inputDataset, aggregators,sc)
+    execute(inputDataset, aggregators,sc)
 
   }
 

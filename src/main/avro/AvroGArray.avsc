@@ -1,0 +1,115 @@
+{
+  "type": "record",
+  "name": "GArray",
+  "namespace": "it.polimi.genomics.avro.garray2",
+  "doc": "A GArray entity.",
+  "fields": [
+    {
+      "name": "gRecord",
+      "type": {
+        "name":"gCoords",
+        "type": "record",
+        "fields": [
+          {
+            "name": "chr",
+            "type": "string"
+          },
+          {
+            "name": "start",
+            "type": "long"
+          },
+          {
+            "name": "stop",
+            "type": "long"
+          },
+          {
+            "name": "strand",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GAttributesRec",
+      "type": {
+        "name":"GAttributes",
+        "type" : "record",
+        "fields": [
+          {
+            "name": "samples",
+            "type": {
+              "type": "array",
+              "items": {
+                "type": "record",
+                "name": "idsRec",
+                "fields": [
+                  {
+                    "name": "_1",
+                    "type": "long"
+                  },
+                  {
+                    "name": "_2",
+                    "type": "int"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "att",
+            "type": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "record",
+                      "name": "GDouble",
+                      "namespace": "it.polimi.genomics.avro.core",
+                      "fields": [
+                        {
+                          "name": "v",
+                          "type": "double"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "record",
+                      "name": "GInt",
+                      "namespace": "it.polimi.genomics.avro.core",
+                      "fields": [
+                        {
+                          "name": "v",
+                          "type": "int"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "record",
+                      "name": "GNull",
+                      "namespace": "it.polimi.genomics.avro.core",
+                      "fields": []
+                    },
+                    {
+                      "type": "record",
+                      "name": "GString",
+                      "namespace": "it.polimi.genomics.avro.core",
+                      "fields": [
+                        {
+                          "name": "v",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

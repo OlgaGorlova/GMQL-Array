@@ -3,14 +3,18 @@ package it.polimi.genomics.array.implementation.loaders
 import com.google.common.hash.Hashing
 import it.polimi.genomics.array.DataTypes.ArrayTypes.GARRAY
 import it.polimi.genomics.array.DataTypes.{GArray, GAttributes, GRegionKey}
+import it.polimi.genomics.avro.myavro.{gregion, idsList, repRec, sampleRec}
 import it.polimi.genomics.array.test.DataFormatTest.sc
-import it.polimi.genomics.array.utilities.KryoFile
+import it.polimi.genomics.array.utilities.{AvroUtil, KryoFile}
+import it.polimi.genomics.avro.myavro.gregion
 import it.polimi.genomics.core.DataTypes.GRECORD
 import it.polimi.genomics.core._
 import it.polimi.genomics.spark.implementation.loaders.{CustomParser, Loaders}
 import org.apache.log4j.Logger
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+
+import scala.collection.JavaConversions._
 
 /**
   * Created by Olga Gorlova on 17/10/2019.
@@ -28,10 +32,10 @@ object Import {
     toArray(rdd)
   }
 
-  def apply(path: String, isArray:Boolean, sc:SparkContext):RDD[GArray] ={
+  def apply(path: String, isArray:Boolean, sc:SparkContext):RDD[GARRAY] ={
     logger.info(s"----------------Import($path, object) executing...")
 //    implicit def orderGrecord: Ordering[GARRAY] = Ordering.by{s => val e = s._1;(e._1,e._2,e._3,e._4)}
-    val ds = loadArray2(path,sc)/*.repartition(100)*/
+    val ds = loadArray(path,sc)/*.repartition(100)*/
 //    println("Import: "+ds.count())
     ds/*.persist()*/
 
@@ -76,6 +80,37 @@ object Import {
 //
 //    ds
 
+  }
+
+  def readAvro(path: String, sc: SparkContext): RDD[GARRAY] ={
+    val rddFromFile: RDD[GARRAY] = AvroUtil.read[gregion](
+      path = path,
+      schema = gregion.getClassSchema,
+      sc = sc
+    ).map{g=>
+      val r = gregion.newBuilder(g).build()
+      val gRegionKey: GRegionKey = new GRegionKey(r.getChr.toString, r.getStart, r.getStop, r.getStrand.charAt(0))
+      val ids: Array[(Long, Int)] = r.getIdsList.map(id => (id.getId,id.getRep)).toArray
+      val values: Array[Array[Array[GValue]]] = r.getValuesArray.map{ v=>
+        v.getSampleArray.map{s=> val sss:Array[GValue] = s.getRepArray.map(r=> GDouble(r)).toArray; sss}.toArray
+      }.toArray
+      val gAttributes = new GAttributes(ids, values)
+
+      (gRegionKey, gAttributes)
+    }
+
+    rddFromFile
+  }
+
+  def readAsAvro(path: String, sc: SparkContext): RDD[gregion] ={
+    val rddFromFile: RDD[gregion] = AvroUtil.read[gregion](
+      path = path,
+      schema = gregion.getClassSchema,
+      sc = sc
+    ).map{g=>
+      gregion.newBuilder(g).build()
+    }
+    rddFromFile
   }
 
 

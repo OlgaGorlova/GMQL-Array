@@ -1,0 +1,29 @@
+{
+  "name": "myRecord",
+  "type":"record",
+  "namespace":"it.polimi.genomics.avro.test2",
+  "fields":[
+    {
+      "name":"myArrayWithMultiplesTypes",
+      "type":{
+        "type": "array",
+        "items":[
+          {
+            "name":"typeOne",
+            "type":"record",
+            "fields":[
+              {"name":"name", "type":"string"}
+            ]
+          },
+          {
+            "name":"typeTwo",
+            "type":"record",
+            "fields":[
+              {"name":"id", "type":"int"}
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

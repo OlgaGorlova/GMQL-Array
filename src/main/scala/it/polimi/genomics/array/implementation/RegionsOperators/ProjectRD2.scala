@@ -29,14 +29,14 @@ object ProjectRD2 {
     execute(projectedValues, tupleAggregator, input, sc)
   }
 
-  def apply(projectedValues : Option[List[Int]], tupleAggregator : Option[List[RegionExtension]], inputDataset : RDD[GARRAY], sc: SparkContext) : RDD[(GRegionKey, GAttributes)] = {
+  def apply(projectedValues : Option[List[Int]], tupleAggregator : Option[List[RegionExtension]], inputDataset : RDD[GARRAY], sc: SparkContext) : RDD[GARRAY] = {
 
     logger.info("----------------ProjectRD executing...")
 
     execute(projectedValues, tupleAggregator, inputDataset, sc)
   }
 
-  def execute(projectedValues : Option[List[Int]], tupleAggregator : Option[List[RegionExtension]], input : RDD[GARRAY], sc: SparkContext) : RDD[(GRegionKey, GAttributes)] = {
+  def execute(projectedValues : Option[List[Int]], tupleAggregator : Option[List[RegionExtension]], input : RDD[GARRAY], sc: SparkContext) : RDD[GARRAY] = {
 
     val extended = if (tupleAggregator.isDefined) {
       input.flatMap { a => extendRegion(a, tupleAggregator.get)

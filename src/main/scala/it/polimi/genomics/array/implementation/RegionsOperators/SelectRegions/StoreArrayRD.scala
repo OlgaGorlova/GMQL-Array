@@ -82,4 +82,53 @@ object StoreArrayRD {
     regions
   }
 
+  @throws[SelectFormatException]
+  def apply(path: String, value: RDD[GARRAY], schema : List[(String, PARSING_TYPE)], sc: SparkContext): RDD[GARRAY] = {
+    val regions = value
+
+    val conf = new Configuration();
+    val dfsPath = new org.apache.hadoop.fs.Path(path);
+    val fs = FileSystem.get(dfsPath.toUri(), conf);
+
+    val MetaOutputPath = path + "/meta/"
+    val RegionOutputPath = path + "/files/"
+
+    logger.debug(MetaOutputPath)
+    logger.debug(RegionOutputPath)
+    logger.debug(regions.toDebugString)
+
+    val outputFolderName= try{
+      new Path(path).getName
+    }
+    catch{
+      case _:Throwable => path
+    }
+
+    val outSample = "S"
+
+    val ids = regions.flatMap(x=> x._2._1.map(_._1)).distinct().collect().sorted
+    val newIDS = ids.zipWithIndex.toMap
+    val newIDSbroad = sc.broadcast(newIDS)
+
+    val regionsPartitioner = new HashPartitioner(ids.length)
+
+    val regionsToStore = regions.map{g=>
+      val coord = g._1.chrom + "__" + g._1.start + "__" + g._1.stop + "__" + g._1.strand
+      val ids = g._2._1.map(i=> outSample+"_"+ "%05d".format(newIDSbroad.value.get(i._1).get)+":"+i._2).mkString("__")
+      val att = g._2._2.map(a=> a.map(s=>s.mkString(":")).mkString("__")).mkString(";")
+      ("regions.mgd",">"+coord+";"+ids+";"+att)
+    }.partitionBy(regionsPartitioner)
+
+
+    //    val keyedRDDR = if(Ids.count == regions.partitions) keyedRDD.sortBy{s=>val data = s._2.split("\t"); (data(0),data(3).toLong,data(4).toLong)} else keyedRDD
+    //    writeMultiOutputFiles.saveAsMultipleTextFiles(keyedRDD, RegionOutputPath)
+    regionsToStore.saveAsHadoopFile(RegionOutputPath,classOf[String],classOf[String],classOf[RDDMultipleTextOutputFormat])
+
+    writeMultiOutputFiles.fixOutputMetaLocation(MetaOutputPath)
+
+    //    writeMultiOutputFiles.removeExtraFiles(RegionOutputPath)
+
+    regions
+  }
+
 }

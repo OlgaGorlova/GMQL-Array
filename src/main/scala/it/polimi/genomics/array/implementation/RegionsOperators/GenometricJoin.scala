@@ -38,11 +38,11 @@ object GenometricJoin {
     execute(ref, exp, regionBuilder, less, BINNING_PARAMETER, sc)
   }
 
-  def apply(left: RDD[GArray], right:  RDD[GArray], regionBuilder : RegionBuilder, less: Option[DistLess], BINNING_PARAMETER:Long, sc : SparkContext) :  RDD[GArray] = {
+  def apply(left: RDD[GARRAY], right:  RDD[GARRAY], regionBuilder : RegionBuilder, less: Option[DistLess], BINNING_PARAMETER:Long, sc : SparkContext) :  RDD[GARRAY] = {
 
     logger.info(s"----------------GenometricJoin: $regionBuilder executing...")
 
-    execute2(left,right,regionBuilder,less,BINNING_PARAMETER,sc)
+    execute(left,right,regionBuilder,less,BINNING_PARAMETER,sc)
   }
 
   def execute(ref: RDD[GARRAY], exp:  RDD[GARRAY], regionBuilder : RegionBuilder, less: Option[DistLess], BINNING_PARAMETER:Long, sc : SparkContext) :  RDD[(GRegionKey, GAttributes)] = {

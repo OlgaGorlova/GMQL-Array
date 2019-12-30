@@ -28,10 +28,10 @@ object UnionRD {
     execute(schemaReformatting, left, right, sc)
   }
 
-  def apply(schemaReformatting: List[Int], leftDataset: RDD[GArray], rightDataset: RDD[GArray], sc: SparkContext):RDD[GArray] = {
+  def apply(schemaReformatting: List[Int], leftDataset: RDD[GARRAY], rightDataset: RDD[GARRAY], sc: SparkContext):RDD[GARRAY] = {
     logger.info("----------------UnionRD executing..")
 
-    execute2(schemaReformatting, leftDataset, rightDataset, sc)
+    execute(schemaReformatting, leftDataset, rightDataset, sc)
   }
 
 

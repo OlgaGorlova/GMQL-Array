@@ -1,0 +1,77 @@
+{
+  "name": "gregion",
+  "type": "record",
+  "namespace": "it.polimi.genomics.avro.myavro",
+  "fields": [
+    {
+      "name": "chr",
+      "type": "string"
+    },
+    {
+      "name": "start",
+      "type": "long"
+    },
+    {
+      "name": "stop",
+      "type": "long"
+    },
+    {
+      "name": "strand",
+      "type": "string"
+    },
+    {
+      "name": "idsList",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "idsList",
+          "fields": [
+            {
+              "name": "id",
+              "type": "long"
+            },
+            {
+              "name": "rep",
+              "type": "int"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "valuesArray",
+      "type": {
+        "type": "array",
+        "items": {
+          "name": "sampleRec",
+          "type": "record",
+          "fields": [
+            {
+              "name": "sampleArray",
+              "type": {
+                "type": "array",
+                "items": {
+                  "name": "repRec",
+                  "type": "record",
+                  "fields": [
+                    {
+                      "name": "repArray",
+                      "type": {
+                        "type": "array",
+                        "items": {
+                          "name": "value",
+                          "type": "double"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

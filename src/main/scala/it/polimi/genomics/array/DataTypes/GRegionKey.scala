@@ -36,6 +36,35 @@ case class GRegionKey (chrom:String,start:Long,stop:Long,strand:Char)
   }
 }
 
+case class GRegionKey2 (chrom:String,start:Long,stop:Long,strand:String)
+  extends Ordered[GRegionKey]
+    with Serializable
+{
+  def _1: String = chrom
+  def _2: Long = start
+  def _3: Long = stop
+  def _4: String = strand
+
+  def this()= this("chr",0,0,".")
+
+  def compare(o: GRegionKey): Int = {
+    if (this.chrom.equals(o._1))
+      if (this.start == o._2)
+        if (this.stop == o._3)
+          this.stop compare o._4
+        else this.stop compare o._3
+      else this.start compare o._2
+    else this.chrom compare o._1
+  }
+
+  override def toString ():String ={
+    val reg = chrom + "\t" + start + "\t" + stop+"\t"+strand;
+    //    values match {
+    //      case _: Array[Any] => return reg+"\t"+values.iterator.mkString("\t");
+    //    }
+    reg
+  }
+}
 
 //case class GRegionKey2 (chrom:String,start:Long,stop:Long,strand:Char)
 //  extends Ordered[GRegionKey]

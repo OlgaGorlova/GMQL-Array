@@ -1,13 +1,17 @@
 package it.polimi.genomics.array.test
 
 import it.polimi.genomics.GMQLServer.{DefaultRegionExtensionFactory, DefaultRegionsToMetaFactory, DefaultRegionsToRegionFactory}
+import it.polimi.genomics.array.DataTypes.ArrayTypes.GARRAY
+import it.polimi.genomics.array.DataTypes.GArray
 import it.polimi.genomics.array.implementation.RegionsOperators._
 import it.polimi.genomics.array.implementation.loaders.Import
 import it.polimi.genomics.array.utilities.ArrayKryoRegistrator
+import it.polimi.genomics.avro.myavro.gregion
 import it.polimi.genomics.core.DataStructures.CoverParameters.{ANY, CoverFlag, N}
 import it.polimi.genomics.core.DataStructures.JoinParametersRD.RegionBuilder
 import it.polimi.genomics.core.DataStructures.RegionAggregate.RESTART
 import it.polimi.genomics.core.DataStructures.RegionCondition.ChrCondition
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
 
@@ -31,10 +35,14 @@ object SingleTest {
       .set("spark.executor.heartbeatInterval", "2000s")
       .set("spark.network.timeout", "10000000")
     //      .set("spark.local.dir", "/tmp")
-    //      .set("spark.eventLog.enabled", "true")
+          .set("spark.eventLog.enabled", "true")
 
     sc = new SparkContext(conf)
     sc.setLogLevel("WARN")
+
+//    sc.hadoopConfiguration.set("fs.s3n.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+//    sc.hadoopConfiguration.set("fs.s3n.awsAccessKeyId", "AKIAJNZFCQRQNYHI7JZA")
+//    sc.hadoopConfiguration.set("fs.s3n.awsSecretAccessKey", "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")
 
     //    val mainPath = if (args.isEmpty) "/Users/olha/WORK/BENCHMARKS/STQL/Serialized_array_spark/medium_900MB_5att_5samples/" else args(1)
     //    val op = if (args.isEmpty) "union" else args(0)
@@ -65,9 +73,10 @@ object SingleTest {
     //    val fun = Predicate(0, REG_OP.GT, 2)
     val fun = ChrCondition("chr13")
     val startTime = System.currentTimeMillis()
-    val ref = Import(path, true, sc)
-    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
-    val res = SelectRD(Some(fun), ref, sc)
+//    val ref = Import(path, true, sc)
+    val ref = Import.readAsAvro(path, sc)
+//    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val res = SelectRD.applyAvro(Some(fun), ref, sc)
     println("SELECT: " + res.count())
     println("Execution time for SELECT array-based: " + (System.currentTimeMillis() - startTime) / 1000)
 
@@ -79,9 +88,10 @@ object SingleTest {
     val fun = DefaultRegionExtensionFactory.get(RESTART(), Left("old_start"))
 
     val startTime = System.currentTimeMillis()
-    val ref = Import(path, true, sc)
-    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
-    val res = ProjectRD(None, Some(List(fun)), ref, sc)
+//    val ref = Import(path, true, sc)
+    val ref: RDD[gregion] = Import.readAsAvro(path, sc)
+//    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val res = ProjectRD.applyAvro(None, Some(List(fun)), ref, sc)
     println("PROJECT: " + res.count())
     println("Execution time for PROJECT array-based: " + (System.currentTimeMillis() - startTime) / 1000)
   }
@@ -90,8 +100,9 @@ object SingleTest {
     sc.getConf.setAppName("MERGE")
 
     val startTime = System.currentTimeMillis()
-    val ref = Import(path, true, sc)
-    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+//    val ref = Import(path, true, sc)
+    val ref = Import.readAvro(path, sc)
+//    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = MergeRD(ref, sc)
     println("MERGE: " + res.count())
     println("Execution time for MERGE array-based: " + (System.currentTimeMillis() - startTime) / 1000)
@@ -103,9 +114,10 @@ object SingleTest {
     val fun = DefaultRegionsToRegionFactory.get("COUNT", Some("count"))
 
     val startTime = System.currentTimeMillis()
-    val ref = Import(path, true, sc)
-    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
-    val res = GroupRD(None, Some(List(fun)), ref, sc)
+//    val ref = Import(path, true, sc)
+    val ref = Import.readAsAvro(path, sc)
+//    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val res = GroupRD.applyAvro(None, Some(List(fun)), ref, sc)
     println("GROUP: " + res.count())
     println("Execution time for GROUP array-based: " + (System.currentTimeMillis() - startTime) / 1000)
   }
@@ -115,8 +127,9 @@ object SingleTest {
 
     val fun = DefaultRegionsToMetaFactory.get("COUNT", Some("region_count"))
     val startTime = System.currentTimeMillis()
-    val ref = Import(path, true, sc)
-    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+//    val ref = Import(path, true, sc)
+    val ref = Import.readAvro(path, sc)
+//    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = ExtendRD(ref, List(fun), sc)
     println("EXTEND: " + res.count())
     println("Execution time for EXTEND array-based: " + (System.currentTimeMillis() - startTime) / 1000)
@@ -131,13 +144,16 @@ object SingleTest {
       case "summit" => CoverFlag.SUMMIT
       case "histogram" => CoverFlag.HISTOGRAM
     }
+    implicit def orderGrecord: Ordering[GARRAY] = Ordering.by{s => val e = s._1;(e._1,e._2,e._3,e._4)}
     val fun = DefaultRegionsToRegionFactory.get("COUNT", Some("count"))
     val startTime = System.currentTimeMillis()
-    val ref = Import(path, true, sc)
-    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
-    val res = GenometricCover(coverFlag, new N {
+//    val ref = Import(path, true, sc)
+    import com.softwaremill.quicklens._
+    val ref = Import.readAvro(path, sc)//.map(x=> (x._1.modify(_.stop).using(_ + 5), x._2))
+//    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val res = GenometricCover_v2(coverFlag, new N {
       override val n = 1
-    }, new ANY {}, ref, bin, List(fun), sc)
+    }, new ANY {}, List(fun),  ref, bin, sc)
     println(s"${coverFlag.toString}: " + res.count())
     println("Execution time for COVER array-based: " + (System.currentTimeMillis() - startTime) / 1000)
   }
@@ -152,10 +168,10 @@ object SingleTest {
       case "contig" => RegionBuilder.CONTIG
     }
     val startTime = System.currentTimeMillis()
-    val ref = Import(pathRef, true, sc)
-    val exp = Import(pathExp, true, sc)
-    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
-    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val ref = Import.readAvro(pathRef, sc)
+    val exp = Import.readAvro(pathExp, sc)
+//    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+//    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = GenometricJoin(ref, exp, regionBuilder, None, bin, sc)
     println(s"JOIN ${regionBuilder.toString}: " + res.count())
     println("Execution time for JOIN array-based: " + (System.currentTimeMillis() - startTime) / 1000)
@@ -166,10 +182,10 @@ object SingleTest {
     sc.getConf.setAppName("MAP")
 
     val startTime = System.currentTimeMillis()
-    val ref = Import(pathRef, true, sc)
-    val exp = Import(pathExp, true, sc)
-    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
-    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val ref = Import.readAvro(pathRef, sc)
+    val exp = Import.readAvro(pathExp, sc)
+//    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+//    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = GenometricMap(ref, exp, bin, sc)
     println("MAP: " + res.count())
     println("Execution time for MAP array-based: " + (System.currentTimeMillis() - startTime) / 1000)
@@ -180,10 +196,10 @@ object SingleTest {
     sc.getConf.setAppName("DIFF")
 
     val startTime = System.currentTimeMillis()
-    val ref = Import(pathRef, true, sc)
-    val exp = Import(pathExp, true, sc)
-    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
-    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val ref = Import.readAvro(pathRef, sc)
+    val exp = Import.readAvro(pathExp, sc)
+//    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+//    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = GenometricDifference(ref, exp, bin, false, sc)
     println("DIFFERENCE: " + res.count())
     println("Execution time for DIFFERENCE array-based: " + (System.currentTimeMillis() - startTime) / 1000)
@@ -193,10 +209,10 @@ object SingleTest {
     sc.getConf.setAppName("UNION")
 
     val startTime = System.currentTimeMillis()
-    val ref = Import(pathRef, true, sc)
-    val exp = Import(pathExp, true, sc)
-    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
-    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val ref = Import.readAvro(pathRef, sc)
+    val exp = Import.readAvro(pathExp, sc)
+//    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+//    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = UnionRD(List(-1, -1, -1), ref, exp, sc)
     println("UNION: " + res.count())
     println("Execution time for UNION array-based: " + (System.currentTimeMillis() - startTime) / 1000)

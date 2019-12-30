@@ -3,6 +3,7 @@ package it.polimi.genomics.array.implementation.RegionsOperators
 import it.polimi.genomics.array.DataTypes.ArrayTypes.GARRAY
 import it.polimi.genomics.array.DataTypes.{GArray, GAttributes}
 import it.polimi.genomics.array.implementation.GMQLArrayExecutor
+import it.polimi.genomics.avro.myavro.{gregion, idsList, repRec, sampleRec}
 import it.polimi.genomics.core.DataStructures.RegionOperator
 import it.polimi.genomics.core.exception.SelectFormatException
 import org.apache.log4j.Logger
@@ -29,10 +30,26 @@ object MergeRD {
     execute(ds, sc)
   }
 
-  def apply(inputDataset : RDD[GArray], sc : SparkContext) : RDD[GArray] = {
+  def apply(inputDataset : RDD[GARRAY], sc : SparkContext) : RDD[GARRAY] = {
     logger.info("----------------MergeRD executing..")
 
-    execute2(inputDataset, sc)
+    execute(inputDataset, sc)
+  }
+
+  def applyAvro(inputDataset : RDD[gregion], sc : SparkContext) : RDD[gregion] = {
+    logger.info("----------------MergeRD executing..")
+    import scala.collection.JavaConversions._
+    //union of samples
+    inputDataset.map((r) => {
+
+      val mergedSampleIDs = Array(idsList.newBuilder().setId(1l).setRep(r.getIdsList.foldLeft(0){ (acc, z) => acc + z.getRep}).build()).toList
+      val mergedValues = r.getValuesArray.map{att =>
+        sampleRec.newBuilder().setSampleArray(Array(repRec.newBuilder().setRepArray(att.getSampleArray.flatMap(_.getRepArray).toList).build()).toList).build()
+      }
+
+      gregion.newBuilder(r).setIdsList(mergedSampleIDs).setValuesArray(mergedValues).build()
+    })
+
   }
 
   def execute(ds : RDD[GARRAY], sc : SparkContext) : RDD[GARRAY] = {

@@ -39,11 +39,11 @@ object GenometricMap {
 
   }
 
-  def apply(left: RDD[GArray], right: RDD[GArray], BINNING_PARAMETER: Long, sc: SparkContext): RDD[GArray] = {
+  def apply(left: RDD[GARRAY], right: RDD[GARRAY], BINNING_PARAMETER: Long, sc: SparkContext): RDD[GARRAY] = {
 
     logger.info("----------------GenometricMap executing...")
 
-    execute2(left, right, BINNING_PARAMETER, sc)
+    execute(left, right, BINNING_PARAMETER, sc)
   }
 
   def execute(ref: RDD[GARRAY], exp: RDD[GARRAY], BINNING_PARAMETER: Long, sc: SparkContext): RDD[(GRegionKey, GAttributes)] = {
@@ -55,7 +55,9 @@ object GenometricMap {
 
     val refBinnedRep: RDD[((String, Int), (Long, Long, Char))] = refKeys.binDS(BINNING_PARAMETER)
 
-    val RefExpJoined: RDD[(GRegionKey, (GAttributes, Array[Int]))] = refBinnedRep.cogroup(expBinned)
+//    implicit def orderGrecord: Ordering[((String, Int), (Long, Long, Char))] = Ordering.by{s => val e = s._1;(e._1,e._2,e._3,e._4)}
+
+    val RefExpJoined: RDD[(GRegionKey, (GAttributes, Array[Int]))] = refBinnedRep.repartition(refBinnedRep.getNumPartitions * expBinned.getNumPartitions).cogroup(expBinned)
       .flatMap { grouped: ((String, Int), (Iterable[(Long, Long, Char)], Iterable[(Long, Long, Char, GAttributes)])) =>
         val key: (String, Int) = grouped._1;
         val ref: Iterable[(Long, Long, Char)] = grouped._2._1
