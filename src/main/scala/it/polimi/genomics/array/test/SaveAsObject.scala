@@ -15,7 +15,7 @@ object SaveAsObject {
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf()
       .setAppName("SaveAsObject")
-      .setMaster("local[*]")
+//      .setMaster("local[*]")
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.kryoserializer.buffer", "128")
       .set("spark.kryo.registrator", classOf[ArrayKryoRegistrator].getName)

@@ -57,7 +57,7 @@ object GenometricMap {
 
 //    implicit def orderGrecord: Ordering[((String, Int), (Long, Long, Char))] = Ordering.by{s => val e = s._1;(e._1,e._2,e._3,e._4)}
 
-    val RefExpJoined: RDD[(GRegionKey, (GAttributes, Array[Int]))] = refBinnedRep.repartition(refBinnedRep.getNumPartitions * expBinned.getNumPartitions).cogroup(expBinned)
+    val RefExpJoined: RDD[(GRegionKey, (GAttributes, Array[Int]))] = refBinnedRep.cogroup(expBinned)//.repartition(sc.defaultParallelism + refBinnedRep.getNumPartitions + expBinned.getNumPartitions)
       .flatMap { grouped: ((String, Int), (Iterable[(Long, Long, Char)], Iterable[(Long, Long, Char, GAttributes)])) =>
         val key: (String, Int) = grouped._1;
         val ref: Iterable[(Long, Long, Char)] = grouped._2._1
@@ -87,7 +87,8 @@ object GenometricMap {
         }
 
       }
-
+var t = 1
+    t += 1
     val reduced = RefExpJoined.reduceByKey { (l, r) =>
       val att = new GAttributes(l._1._1 ++ r._1._1, l._1._2 ++ r._1._2)
       val indexesofL = l._1._1.map(_._1)

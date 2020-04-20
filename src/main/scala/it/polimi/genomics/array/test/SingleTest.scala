@@ -60,6 +60,7 @@ object SingleTest {
         case "map" => map(args(1), args(2), args(3).toLong) //ref, exp, alg, bin
         case "difference" => difference(args(1), args(2), args(3).toLong) //ref, exp, alg, bin
         case "union" => union(args(1), args(2)) //ref, exp, alg
+        case "cover1" => cover1(args(1), args(2), args(3).toLong) //path, alg, flag, bin
 
         case _ => println("Please choose a query!")
       }
@@ -151,6 +152,28 @@ object SingleTest {
     import com.softwaremill.quicklens._
     val ref = Import.readAvro(path, sc)//.map(x=> (x._1.modify(_.stop).using(_ + 5), x._2))
 //    println("Load: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
+    val res = GenometricCover(coverFlag, new N {
+      override val n = 1
+    }, new ANY {},  ref, bin, List(fun), sc)
+    println(s"${coverFlag.toString}: " + res.count())
+    println("Execution time for COVER array-based: " + (System.currentTimeMillis() - startTime) / 1000)
+  }
+
+  def cover1(path: String, flag: String, bin: Long): Unit = {
+    sc.getConf.setAppName("COVER")
+
+    val coverFlag = flag.toLowerCase() match {
+      case "cover" => CoverFlag.COVER
+      case "flat" => CoverFlag.FLAT
+      case "summit" => CoverFlag.SUMMIT
+      case "histogram" => CoverFlag.HISTOGRAM
+    }
+    implicit def orderGrecord: Ordering[GARRAY] = Ordering.by{s => val e = s._1;(e._1,e._2,e._3,e._4)}
+    val fun = DefaultRegionsToRegionFactory.get("COUNT", Some("count"))
+    val startTime = System.currentTimeMillis()
+    //    val ref = Import(path, true, sc)
+    import com.softwaremill.quicklens._
+    val ref = Import.readAvro(path, sc)//.map(x=> (x._1.modify(_.stop).using(_ + 5), x._2))
     val res = GenometricCover_v2(coverFlag, new N {
       override val n = 1
     }, new ANY {}, List(fun),  ref, bin, sc)
@@ -169,7 +192,8 @@ object SingleTest {
     }
     val startTime = System.currentTimeMillis()
     val ref = Import.readAvro(pathRef, sc)
-    val exp = Import.readAvro(pathExp, sc)
+    var i = 0;
+    val exp = Import.readAvro(pathExp, sc).map{x=> if (i == 4) i = 0 else i +=1; (x, i)}.filter(_._2 == 4).map(_._1)
 //    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
 //    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = GenometricJoin(ref, exp, regionBuilder, None, bin, sc)
@@ -183,7 +207,8 @@ object SingleTest {
 
     val startTime = System.currentTimeMillis()
     val ref = Import.readAvro(pathRef, sc)
-    val exp = Import.readAvro(pathExp, sc)
+    var i = 0;
+    val exp = Import.readAvro(pathExp, sc).map{x=> if (i == 4) i = 0 else i +=1; (x, i)}.filter(_._2 == 4).map(_._1)
 //    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
 //    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = GenometricMap(ref, exp, bin, sc)
@@ -197,7 +222,8 @@ object SingleTest {
 
     val startTime = System.currentTimeMillis()
     val ref = Import.readAvro(pathRef, sc)
-    val exp = Import.readAvro(pathExp, sc)
+    var i = 0;
+    val exp = Import.readAvro(pathExp, sc).map{x=> if (i == 4) i = 0 else i +=1; (x, i)}.filter(_._2 == 4).map(_._1)
 //    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
 //    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = GenometricDifference(ref, exp, bin, false, sc)
@@ -210,7 +236,8 @@ object SingleTest {
 
     val startTime = System.currentTimeMillis()
     val ref = Import.readAvro(pathRef, sc)
-    val exp = Import.readAvro(pathExp, sc)
+    var i = 0;
+    val exp = Import.readAvro(pathExp, sc).map{x=> if (i == 4) i = 0 else i +=1; (x, i)}.filter(_._2 == 4).map(_._1)
 //    println("Load ref: " + ref.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
 //    println("Load exp: " + exp.count() + " reg. " + (System.currentTimeMillis() - startTime) / 1000 + " sec.")
     val res = UnionRD(List(-1, -1, -1), ref, exp, sc)

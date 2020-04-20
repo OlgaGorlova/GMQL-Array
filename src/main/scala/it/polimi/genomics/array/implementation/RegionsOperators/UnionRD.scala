@@ -34,6 +34,12 @@ object UnionRD {
     execute(schemaReformatting, leftDataset, rightDataset, sc)
   }
 
+  def apply(leftDataset: RDD[GARRAY], rightDataset: RDD[GARRAY], sc: SparkContext):RDD[GARRAY] = {
+    logger.info("----------------UnionRD executing..")
+
+    execute(leftDataset, rightDataset, sc)
+  }
+
 
   def execute(schemaReformatting: List[Int], left: RDD[GARRAY], right: RDD[GARRAY], sc: SparkContext):RDD[GARRAY] = {
 
@@ -106,6 +112,33 @@ object UnionRD {
       else {
         val leftIds = r._2._1.head._1.map(id => (Hashing.md5.newHasher.putLong(0L).putLong(id._1).hash.asLong, id._2))
         GArray(r._1, new GAttributes(leftIds, r._2._1.head._2))
+      }
+
+    }
+
+    union
+  }
+
+  def execute(left: RDD[GARRAY], right: RDD[GARRAY], sc: SparkContext):RDD[GARRAY] = {
+
+    val union = left.cogroup(right).mapValues{r=>
+      if (r._1.nonEmpty && r._2.nonEmpty) {
+        val left = r._1.head
+        val right = r._2.head
+
+        val leftIds = left._1.map(id => (Hashing.md5.newHasher.putLong(0L).putLong(id._1).hash.asLong, id._2))
+        val rightIds = right._1.map(id => (Hashing.md5.newHasher.putLong(1L).putLong(id._1).hash.asLong, id._2))
+        val ids: Array[(Long, Int)] = leftIds ++ rightIds
+        val values: Array[Array[Array[GValue]]] = left._2.zip(right._2).map { v => v._1.union(v._2) }
+
+        new GAttributes(ids, values)
+      } else if (r._1.isEmpty) {
+        val rightIds = r._2.head._1.map(id => (Hashing.md5.newHasher.putLong(1L).putLong(id._1).hash.asLong, id._2))
+        new GAttributes(rightIds, r._2.head._2)
+      }
+      else {
+        val leftIds = r._1.head._1.map(id => (Hashing.md5.newHasher.putLong(0L).putLong(id._1).hash.asLong, id._2))
+        new GAttributes(leftIds, r._1.head._2)
       }
 
     }
